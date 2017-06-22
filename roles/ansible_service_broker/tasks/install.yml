@@ -201,9 +201,9 @@
                   ports:
                     - containerPort: 1338
                       protocol: TCP
-                  args:
-                    - -c
-                    - /etc/ansible-service-broker/config.yaml
+                  env:
+                  - name: BROKER_CONFIG
+                    value: /etc/ansible-service-broker/config.yaml
                   terminationMessagePath: /tmp/termination-log
               volumes:
               - name: config-volume
