@@ -35,19 +35,19 @@
     namespace: openshift-ansible-service-broker
     state: absent
 
-- name: remove etcd deployment
-  oc_obj:
-    name: etcd
-    namespace: openshift-ansible-service-broker
-    state: absent
-    kind: Deployment
-
-- name: remove ansible-service-broker deployment
+- name: remove Ansible Service Broker deployment config
   oc_obj:
     name: asb
     namespace: openshift-ansible-service-broker
+    kind: DeploymentConfig
     state: absent
-    kind: Deployment
+
+- name: remove secret for broker auth
+  oc_obj:
+    name: asb-auth-secret
+    namespace: openshift-ansible-service-broker
+    kind: Broker
+    state: absent
 
 # TODO: saw a oc_configmap in the library, but didn't understand how to get it to do the following:
 - name: remove config map for ansible-service-broker
