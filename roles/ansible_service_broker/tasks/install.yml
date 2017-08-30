@@ -217,7 +217,7 @@
   oc_obj:
     kind: Secret
     name: asb-auth-secret
-    namespace: ansible-service-broker
+    namespace: openshift-ansible-service-broker
     state: present
     content:
       path: /tmp/authout
@@ -226,7 +226,7 @@
         kind: Secret
         metadata:
           name: asb-auth-secret
-          namespace: ansible-service-broker
+          namespace: openshift-ansible-service-broker
         stringData:
           username: "{{ ansible_service_broker_user }}"
           password: "{{ ansible_service_broker_password }}"
