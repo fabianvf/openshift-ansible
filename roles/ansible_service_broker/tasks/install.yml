@@ -51,22 +51,34 @@
     resource_name: admin
     user: "system:serviceaccount:openshift-ansible-service-broker:asb"
 
+# Using oc_obj because oc_service doesn't seem to allow annotations
 - name: create ansible-service-broker service
-  oc_service:
+  oc_obj:
     name: asb
     namespace: openshift-ansible-service-broker
     state: present
-    labels:
-      app: openshift-ansible-service-broker
-      service: asb
-    annotations:
-      service.alpha.openshift.io/serving-cert-secret-name: asb-tls
-    ports:
-      - name: port-1338
-        port: 1338
-    selector:
-      app: openshift-ansible-service-broker
-      service: asb
+    kind: Service
+    content:
+      path: /tmp/asbsvcout
+      data:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: asb
+          labels:
+            app: openshift-ansible-service-broker
+            service: asb
+          annotations:
+            service.alpha.openshift.io/serving-cert-secret-name: asb-tls
+        spec:
+          ports:
+            - name: port-1338
+              port: 1338
+              targetPort: 1338
+              protocol: TCP
+          selector:
+            app: openshift-ansible-service-broker
+            service: asb
 
 - name: create route for ansible-service-broker service
   oc_route:
