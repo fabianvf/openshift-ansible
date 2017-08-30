@@ -80,21 +80,31 @@
             app: openshift-ansible-service-broker
             service: asb
 
+# Using oc_obj because oc_route doesn't seem to allow labels
 - name: create route for ansible-service-broker service
-  oc_route:
+  oc_obj:
     name: asb-1338
     namespace: openshift-ansible-service-broker
     state: present
-    labels:
-      app: ansible-service-broker
-      service: asb
-    service_name: asb
-    port: 1338
-  register: asb_route_out
-
-- name: get ansible-service-broker route name
-  set_fact:
-    ansible_service_broker_route: "{{ asb_route_out.results.results[0].spec.host }}"
+    kind: Route
+    content:
+      path: routeout
+      data:
+        apiVersion: v1
+        kind: Route
+        metadata:
+          name: asb-1338
+          labels:
+            app: openshift-ansible-service-broker
+            service: asb
+        spec:
+          to:
+            kind: Service
+            name: asb
+          port:
+            targetPort: port-1338
+          tls:
+            termination: Reencrypt
 
 - name: create persistent volume claim for etcd
   oc_obj:
