@@ -299,4 +299,8 @@
         metadata:
           name: ansible-service-broker
         spec:
-          url: http://asb.openshift-ansible-service-broker.svc:1338
+          url: https://asb.openshift-ansible-service-broker.svc:1338
+          authInfo:
+            basicAuthSecret:
+              namespace: openshift-ansible-service-broker
+              name: asb-auth-secret
