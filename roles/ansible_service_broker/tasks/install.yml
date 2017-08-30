@@ -260,7 +260,7 @@
                 pass: {{ ansible_service_broker_registry_password }}
                 org:  {{ ansible_service_broker_registry_organization }}
             dao:
-              etcd_host: etcd
+              etcd_host: 0.0.0.0
               etcd_port: 2379
             log:
               logfile: /var/log/ansible-service-broker/asb.log
