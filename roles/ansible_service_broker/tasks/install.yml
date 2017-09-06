@@ -271,7 +271,7 @@
               host: ""
               ca_file: ""
               bearer_token_file: ""
-              image_pull_policy: ""
+              image_pull_policy: "IfNotPresent"
             broker:
               dev_broker: {{ ansible_service_broker_dev_broker | bool | lower }}
               bootstrap_on_startup: {{ ansible_service_broker_bootstrap_on_startup | bool | lower }}
@@ -299,7 +299,7 @@
         metadata:
           name: ansible-service-broker
         spec:
-          url: https://asb.openshift-ansible-service-broker.svc:1338
+          url: http://asb.openshift-ansible-service-broker.svc:1338
           authInfo:
             basicAuthSecret:
               namespace: openshift-ansible-service-broker
