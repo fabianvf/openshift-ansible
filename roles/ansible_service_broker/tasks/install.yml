@@ -109,6 +109,7 @@
 - name: create asb-client token secret
   oc_obj:
     name: asb-client
+    namespace: openshift-ansible-service-broker
     state: present
     kind: Secret
     content:
@@ -118,6 +119,7 @@
         kind: Secret
         metadata:
           name: asb-client
+          namespace: openshift-ansible-service-broker
           annotations:
             kubernetes.io/service-account.name: asb-client
         type: kubernetes.io/service-account-token
@@ -137,6 +139,7 @@
         kind: Service
         metadata:
           name: asb
+          namespace: openshift-ansible-service-broker
           labels:
             app: openshift-ansible-service-broker
             service: asb
@@ -336,7 +339,7 @@
         metadata:
           name: ansible-service-broker
         spec:
-          url: http://asb.openshift-ansible-service-broker.svc:1338/ansible-service-broker
+          url: https://asb.openshift-ansible-service-broker.svc:1338/ansible-service-broker
           authInfo:
             bearer:
               secretRef:
