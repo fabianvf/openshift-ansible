@@ -23,7 +23,7 @@
     ansible_service_broker_registry_password: "{{ ansible_service_broker_registry_password | default(__ansible_service_broker_registry_password) }}"
     ansible_service_broker_registry_organization: "{{ ansible_service_broker_registry_organization | default(__ansible_service_broker_registry_organization) }}"
 
-    ansible_service_broker_certs_dir: "{{ openshift.common.config_base }}/service-catalog"
+    openshift_master_config_dir: "{{ openshift_master_config_dir | default(openshift.common.config_base + '/master') }}"
 
 - name: set ansible-service-broker image facts using set prefix and tag
   set_fact:
@@ -31,7 +31,7 @@
     ansible_service_broker_etcd_image: "{{ ansible_service_broker_etcd_image_prefix }}etcd:{{ ansible_service_broker_etcd_image_tag }}"
 
 - slurp:
-    src: "{{ ansible_service_broker_certs_dir }}/ca.crt"
+    src: "{{ openshift_master_config_dir }}/ca.crt"
   register: catalog_ca
 
 
