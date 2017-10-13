@@ -122,6 +122,9 @@
     service_account: asb-client
     namespace: openshift-ansible-service-broker
     secret: asb-client
+  register: garbage
+
+- debug: msg={{ garbage }}
 
 # Using oc_obj because oc_service doesn't seem to allow annotations
 # TODO: Extend oc_service to allow annotations
