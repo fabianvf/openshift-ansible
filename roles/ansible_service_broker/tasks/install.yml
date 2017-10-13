@@ -121,9 +121,10 @@
     state: list
     namespace: openshift-ansible-service-broker
     name: asb-client
-  register: garbage
+  register: asb_client_secret
 
-- debug: msg={{ garbage.results[0]['data']['service-ca.crt'] }}
+- set_fact:
+    service_ca_crt: asb_client_secret.results.results.0.data['service-ca.crt']
 
 # Using oc_obj because oc_service doesn't seem to allow annotations
 # TODO: Extend oc_service to allow annotations
@@ -347,4 +348,4 @@
                 name: asb-client
                 namespace: openshift-ansible-service-broker
                 kind: Secret
-          caBundle: "{{ catalog_ca.content }}"
+          caBundle: "{{ service_ca_crt }}"
