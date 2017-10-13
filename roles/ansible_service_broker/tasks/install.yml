@@ -119,9 +119,8 @@
 
 - oc_secret:
     state: list
-    service_account: asb-client
     namespace: openshift-ansible-service-broker
-    secret: asb-client
+    name: asb-client
   register: garbage
 
 - debug: msg={{ garbage }}
