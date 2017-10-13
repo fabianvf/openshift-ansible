@@ -28,7 +28,7 @@
 - name: set ansible-service-broker image facts using set prefix and tag
   set_fact:
     ansible_service_broker_image: "{{ ansible_service_broker_image_prefix }}ansible-service-broker:{{ ansible_service_broker_image_tag }}"
-    ansible_service_broker_etcd_image: "{{ ansible_service_broker_etcd_image_prefix }}etcd:{{ ansible_service_broker_etcd_image_tag }}"
+    ansible_service_broker_etcd_image: "{{ ansible_service_broker_etcd_image_prefix }
 
 
 - include: validate_facts.yml
@@ -117,11 +117,10 @@
             kubernetes.io/service-account.name: asb-client
         type: kubernetes.io/service-account-token
 
-- oc_serviceaccount_secret:
+- oc_secret:
     state: list
-    service_account: asb-client
     namespace: openshift-ansible-service-broker
-    secret: asb-client
+    name: asb-client
   register: garbage
 
 - debug: msg={{ garbage }}
