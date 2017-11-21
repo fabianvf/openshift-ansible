@@ -204,6 +204,7 @@
 
 - name: Create Ansible Service Broker deployment config
   oc_obj:
+    force: yes
     name: asb
     namespace: openshift-ansible-service-broker
     state: present
@@ -280,6 +281,7 @@
 
 - name: Create asb-etcd deployment config
   oc_obj:
+    force: yes
     name: etcd
     namespace: openshift-ansible-service-broker
     state: present
