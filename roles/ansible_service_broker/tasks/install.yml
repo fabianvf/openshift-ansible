@@ -195,25 +195,12 @@
     tls_termination: Reencrypt
 
 - name: create persistent volume claim for etcd
-  oc_obj:
+  oc_pvc:
     name: etcd
     namespace: openshift-ansible-service-broker
-    state: present
-    kind: PersistentVolumeClaim
-    content:
-      path: /tmp/pvcout
-      data:
-        apiVersion: v1
-        kind: PersistentVolumeClaim
-        metadata:
-          name: etcd
-          namespace: openshift-ansible-service-broker
-        spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 1Gi
+    access_modes:
+      - ReadWriteOnce
+    volume_capacity: 1G
 
 - name: Create Ansible Service Broker deployment config
   oc_obj:
