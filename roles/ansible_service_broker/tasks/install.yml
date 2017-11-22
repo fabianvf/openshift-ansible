@@ -202,7 +202,16 @@
       - ReadWriteOnce
     volume_capacity: 1G
 
+- name: Search for existing Ansible Service Broker deployment config
+  oc_obj:
+    name: asb
+    namespace: openshift-ansible-service-broker
+    kind: DeploymentConfig
+    state: list
+  register: asb_dc
+
 - name: Create Ansible Service Broker deployment config
+  when: asb_dc.results.results.0 | length == 0
   oc_obj:
     force: yes
     name: asb
@@ -279,10 +288,18 @@
                   secret:
                     secretName: broker-etcd-auth-secret
 
-- name: Create asb-etcd deployment config
+- name: Search for existing Ansible Service Broker etcd deployment config
   oc_obj:
-    force: yes
-    name: etcd
+    name: asb-etcd
+    namespace: openshift-ansible-service-broker
+    kind: DeploymentConfig
+    state: list
+  register: asb_etcd_dc
+
+- name: Create asb-etcd deployment config
+  when: asb_etcd_dc.results.results.0 | length == 0
+  oc_obj:
+    name: asb-etcd
     namespace: openshift-ansible-service-broker
     state: present
     kind: DeploymentConfig
