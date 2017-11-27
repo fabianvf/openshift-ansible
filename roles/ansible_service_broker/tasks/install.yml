@@ -168,6 +168,7 @@
 - name: create asb-etcd service
   oc_service:
     name: asb-etcd
+    namespace: openshift-ansible-service-broker
     labels:
       app: etcd
       service: asb-etcd
