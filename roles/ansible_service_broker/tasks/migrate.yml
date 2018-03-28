@@ -1,92 +1,118 @@
 ---
 
-- name: scale down asb deploymentconfig
-  oc_obj: TODO
+- block:
+  - name: scale down asb deploymentconfig
+    oc_scale:
+      name: asb
+      namespace: openshift-ansible-service-broker
+      kind: dc
+      replicas: 0
 
-- name: Run asb pod with migration arguments
-  oc_obj:
-    name: asb_migration
-    namespace: openshift-ansible-service-broker
-    kind: Job
-    state: present
-    content:
-      path: /tmp/asb_migrate_out
-      data:
-        apiVersion: v1
-        kind: Job
-        metadata:
-          name: asb-etcd-migration
-        spec:
-          parallelism: 1
-          completions: 1
-          template:
-            metadata:
-              name: asb-etcd-migration
-            spec:
-              containers:
-                - name: asb
-                  image: '{{ ansible_service_broker_image }}'
-                  imagePullPolicy: IfNotPresent
-                  volumeMounts:
-                    - name: config-volume
-                      mountPath: /etc/ansible-service-broker
-                    - name: asb-tls
-                      mountPath: /etc/tls/private
-                    - name: asb-etcd-auth
-                      mountPath: /var/run/asb-etcd-auth
-                  env:
-                    - name: BROKER_CONFIG
-                      value: /etc/ansible-service-broker/config.yaml
-                    - name: HTTP_PROXY
-                      value: "{{ openshift.common.http_proxy  | default('') }}"
-                    - name: HTTPS_PROXY
-                      value: "{{ openshift.common.https_proxy  | default('') }}"
-                    - name: NO_PROXY
-                      value: "{{ ([openshift.common.no_proxy, '.default'] | join(',')) if openshift.get('common', {}).get('no_proxy') else '' }}"
-              volumes:
-                - name: config-volume
-                  configMap:
-                    name: broker-config
-                    items:
-                      - key: broker-config
-                        path: config.yaml
-                - name: asb-tls
-                  secret:
-                    secretName: asb-tls
-                - name: asb-etcd-auth
-                  secret:
-                    secretName: broker-etcd-auth-secret
-              restartPolicy: Never
-- name: wait for migration to complete
-  oc_obj:
-    namespace: openshift-ansible-service-broker
-    kind: job
-    state: list
-    name: asb-etcd-migration
-  register: migration_status
-  until:
-    - TODO: need to find out what this looks like on termination
+  - name: Migrate from etcd to CustomResources
+    oc_obj:
+      name: asb_migration
+      namespace: openshift-ansible-service-broker
+      kind: Job
+      state: present
+      content:
+        path: /tmp/asb_migrate_out
+        data:
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: asb-etcd-migration
+          spec:
+            parallelism: 1
+            completions: 1
+            template:
+              metadata:
+                name: asb-etcd-migration
+              spec:
+                containers:
+                  - name: asb
+                    image: '{{ ansible_service_broker_image }}'
+                    imagePullPolicy: IfNotPresent
+                    command:
+                      - 'echo'
+                    args:
+                      - 'hello'
+                    volumeMounts:
+                      - name: config-volume
+                        mountPath: /etc/ansible-service-broker
+                      - name: asb-tls
+                        mountPath: /etc/tls/private
+                      - name: asb-etcd-auth
+                        mountPath: /var/run/asb-etcd-auth
+                    env:
+                      - name: BROKER_CONFIG
+                        value: /etc/ansible-service-broker/config.yaml
+                      - name: HTTP_PROXY
+                        value: "{{ openshift.common.http_proxy  | default('') }}"
+                      - name: HTTPS_PROXY
+                        value: "{{ openshift.common.https_proxy  | default('') }}"
+                      - name: NO_PROXY
+                        value: "{{ ([openshift.common.no_proxy, '.default'] | join(',')) if openshift.get('common', {}).get('no_proxy') else '' }}"
+                volumes:
+                  - name: config-volume
+                    configMap:
+                      name: broker-config
+                      items:
+                        - key: broker-config
+                          path: config.yaml
+                  - name: asb-tls
+                    secret:
+                      secretName: asb-tls
+                  - name: asb-etcd-auth
+                    secret:
+                      secretName: broker-etcd-auth-secret
+                restartPolicy: Never
 
-- when: not (migrate_status|failed)  # TODO
-  block:
-    - name: delete etcd service
-      oc_service:
-        name: asb-etcd
+  - name: wait for migration to complete
+    oc_obj:
+      namespace: openshift-ansible-service-broker
+      kind: Job
+      state: list
+      name: asb-etcd-migration
+    register: migration_status
+    ignore_errors: true
+    until:
+      - "'results' in migration_status.results and migration_status.results.results | count > 0"
+      # Pod's 'Complete' status must be True
+      - "migration_status.results.results | lib_utils_oo_collect(attribute='status.conditions') | lib_utils_oo_collect(attribute='status', filters={'type': 'Complete'}) | map('bool') | select | list | count == 1"
+    delay: 10
+    retries: "{{ (asb_migration_timeout|default(600) | int / 10) | int }}"
+    failed_when:
+      - "'results' in migration_status.results"
+      - "migration_status.results.results | count > 0"
+      # Fail when pod's 'Failed' status is True
+      - "migration_status.results.results | lib_utils_oo_collect(attribute='status.conditions') | lib_utils_oo_collect(attribute='status', filters={'type': 'Failed'}) | map('bool') | select | list | count == 1"
+
+  - when: not (migration_status is failed)
+    block:
+      - name: delete etcd service
+        oc_service:
+          name: asb-etcd
+          namespace: openshift-ansible-service-broker
+          state: absent
+
+      - name: delete etcd deploymentconfig
+        oc_obj:
+          name: asb-etcd
+          namespace: openshift-ansible-service-broker
+          kind: DeploymentConfig
+          state: absent
+
+      - name: delete broker etcd secret
+        oc_secret:
+          name: '{{ item }}'
+          namespace: openshift_ansible_service_broker
+          state: absent
+        with_items:
+          - broker-etcd-auth-secret
+  always:
+    - name: scale up asb deploymentconfig
+      oc_scale:
+        name: asb
         namespace: openshift-ansible-service-broker
-        state: absent
-
-    - name: delete etcd deploymentconfig
-      oc_obj:
-        name: asb-etcd
-        namespace: openshift-ansible-service-broker
-        kind: DeploymentConfig
-        state: absent
-
-    - name: delete etcd secrets
-      oc_secret:
-        name: '{{ item }}'
-        namespace: openshift_ansible_service_broker
-        state: absent
-      with_items:
-        - etcd-auth-secret
-        - broker-etcd-auth-secret
+        kind: dc
+        replicas: 1
